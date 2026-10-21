@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dead Pixel Test</title>
+<style>
+:root{--bg:#f3f4f6;--fg:#15171a;--mut:#5b6068;--line:#d4d7dc;--acc:#1d4ed8;--sf:#fff;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14161a;--fg:#eceef1;--mut:#9aa0a8;--line:#2d3138;--acc:#7aa2ff;--sf:#1c1f24;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14161a;--fg:#eceef1;--mut:#9aa0a8;--line:#2d3138;--acc:#7aa2ff;--sf:#1c1f24;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:28px 20px 40px}
+h1{font-size:28px;margin:0 0 6px;letter-spacing:-.02em}
+p{margin:0 0 18px;color:var(--mut)}
+h2{font-size:15px;margin:22px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px}
+.sw{height:64px;border-radius:8px;border:1px solid var(--line);cursor:pointer;display:flex;align-items:flex-end;padding:4px 6px;font-size:11px;font-weight:600;color:#fff;mix-blend-mode:normal;text-shadow:0 0 3px #000}
+.sw.l{color:#000;text-shadow:0 0 3px #fff}
+.sw:focus-visible,button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button{font:inherit;font-weight:600;padding:12px 18px;border-radius:8px;border:1px solid var(--line);background:var(--sf);color:var(--fg);cursor:pointer}
+button.p{background:var(--acc);color:#fff;border-color:var(--acc)}
+input[type=color]{width:52px;height:46px;border:1px solid var(--line);border-radius:8px;background:var(--sf);padding:3px}
+ul{margin:0;padding-left:20px;color:var(--mut);font-size:14px}
+footer{margin-top:32px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--mut);text-align:center}
+#stage{position:fixed;inset:0;z-index:99;display:none;cursor:none;touch-action:manipulation}
+#stage.on{display:block}
+#hud{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:100;background:rgba(0,0,0,.72);color:#fff;padding:8px 14px;border-radius:999px;font-size:13px;display:none;transition:opacity .4s;pointer-events:none;text-align:center}
+#stage.on+#hud{display:block}
+</style>
+</head>
+<body>
+<main>
+<h1>Dead pixel test</h1>
+<p>Fill the whole screen with one color and look for dots that stay a different color. Dark dots on white are dead, bright dots on black are stuck.</p>
+
+<h2>Solid colors</h2>
+<div class="grid" id="grid"></div>
+
+<h2>Custom color</h2>
+<div class="row"><input type="color" id="pick" value="#ff8800" aria-label="Pick a color"><button id="goCustom">Show color</button></div>
+
+<h2>Run all</h2>
+<div class="row">
+<button class="p" id="goAll">Start full test</button>
+<button id="goCycle">Auto-cycle (2 s)</button>
+</div>
+
+<h2>Controls in test mode</h2>
+<ul>
+<li>Click, tap, or Right arrow / Space: next color</li>
+<li>Left arrow: previous color</li>
+<li>Esc: exit</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>Press F11 first for true full screen on desktop; the test also requests it.</li>
+<li>Clean the screen so dust isn't mistaken for a pixel fault.</li>
+<li>Check red, green and blue separately to find single-subpixel faults.</li>
+<li>Run it from a few centimeters away, then at normal distance.</li>
+</ul>
+<footer>Copyright © Md Ashraful Hakim Khan Siddiquee · Free for noncommercial use</footer>
+</main>
+<div id="stage" role="button" aria-label="Test color, click for next"></div>
+<div id="hud"></div>
+<script>
+(function(){
+var C=[["Black","#000000"],["White","#ffffff"],["Red","#ff0000"],["Green","#00ff00"],["Blue","#0000ff"],["Cyan","#00ffff"],["Magenta","#ff00ff"],["Yellow","#ffff00"],["Gray 25%","#404040"],["Gray 50%","#808080"],["Gray 75%","#bfbfbf"],["Dark red","#800000"],["Dark green","#008000"],["Dark blue","#000080"],["Orange","#ff8000"],["Purple","#8000ff"]];
+var grid=document.getElementById("grid"),stage=document.getElementById("stage"),hud=document.getElementById("hud");
+var seq=[],i=0,timer=null,hudT=null;
+function light(h){var r=parseInt(h.substr(1,2),16),g=parseInt(h.substr(3,2),16),b=parseInt(h.substr(5,2),16);return (r*299+g*587+b*114)/1000>150}
+C.forEach(function(c,k){var d=document.createElement("div");d.className="sw"+(light(c[1])?" l":"");d.style.background=c[1];d.tabIndex=0;d.textContent=c[0];d.setAttribute("role","button");
+d.onclick=function(){start([c],0,0)};d.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();start([c],0,0)}};grid.appendChild(d)});
+function show(){var c=seq[i];stage.style.background=c[1];hud.textContent=c[0]+" ("+(i+1)+"/"+seq.length+") · "+(seq.length>1?"click for next, Esc to exit":"click or Esc to exit");hud.style.opacity=1;clearTimeout(hudT);hudT=setTimeout(function(){hud.style.opacity=0},2200)}
+function start(s,idx,auto){seq=s;i=idx;stage.classList.add("on");show();
+try{var r=stage.requestFullscreen&&stage.requestFullscreen();if(r&&r.catch)r.catch(function(){})}catch(e){}
+clearInterval(timer);if(auto){timer=setInterval(function(){step(1)},auto)}}
+function step(d){if(seq.length<2){stop();return}i=(i+d+seq.length)%seq.length;show()}
+function stop(){clearInterval(timer);stage.classList.remove("on");try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}}
+stage.onclick=function(){if(seq.length<2)stop();else step(1)};
+document.addEventListener("keydown",function(e){if(!stage.classList.contains("on"))return;
+if(e.key==="Escape")stop();else if(e.key==="ArrowRight"||e.key===" "){e.preventDefault();step(1)}else if(e.key==="ArrowLeft")step(-1)});
+document.addEventListener("fullscreenchange",function(){if(!document.fullscreenElement&&stage.classList.contains("on")&&!/Edge|Chrome|Safari|Firefox/.test("")){}});
+document.getElementById("goAll").onclick=function(){start(C.slice(0,8).concat(C.slice(8,11)),0,0)};
+document.getElementById("goCycle").onclick=function(){start(C.slice(0,8),0,2000)};
+document.getElementById("goCustom").onclick=function(){var v=document.getElementById("pick").value;start([["Custom "+v,v]],0,0)};
+})();
+</script>
+</body>
+</html>
