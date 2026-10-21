@@ -27,6 +27,8 @@ Press F11 first for true full screen on desktop.
 ## Features
 
 - 16 preset colors, including black, white, RGB primaries, secondary colors and grays
+- Gradient ramps, color bars, near-black backlight checks, checkerboard and grid patterns
+- Stuck pixel fixer: a draggable window of flashing colors (flashing warning included)
 - Custom color picker
 - Full test sequence and 2-second auto-cycle
 - No dependencies, no network access, one HTML file

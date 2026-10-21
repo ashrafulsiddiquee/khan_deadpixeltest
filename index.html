@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Dead Pixel Test - Free Online Monitor and Display Test</title>
-<meta name="description" content="Free online dead pixel test for monitors, laptops, TVs and phones. Fill your screen with solid colors to find dead pixels, stuck pixels and backlight problems. No install needed.">
+<meta name="description" content="Free online dead pixel test for monitors, laptops, TVs and phones. Fill your screen with solid colors to find dead pixels, stuck pixels and backlight problems. Also includes gradient and banding tests, backlight bleed checks and a stuck pixel fixer. No install needed.">
 <meta name="keywords" content="dead pixel test, monitor test, display test, stuck pixel test, screen test, LCD test, OLED test">
 <meta name="author" content="Md Ashraful Hakim Khan Siddiquee">
 <link rel="canonical" href="https://ashrafulsiddiquee.github.io/khan_deadpixeltest/">
@@ -41,6 +41,13 @@ article h2{font-size:20px;margin:26px 0 8px}
 article h3{font-size:16px;margin:18px 0 4px}
 article p{color:var(--fg);margin:0 0 12px;max-width:68ch}
 footer{margin-top:32px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--mut);text-align:center}
+.pt span{background:rgba(0,0,0,.65);color:#fff;text-shadow:none;padding:1px 6px;border-radius:4px}
+.warn{font-size:13px;color:var(--mut);margin:8px 0 0;max-width:60ch}
+#fixer{position:fixed;left:24px;top:120px;z-index:101;display:none;flex-direction:column;gap:6px;touch-action:none;user-select:none}
+#fixer.on{display:flex}
+#fxbox{width:200px;height:200px;border:2px solid #888;cursor:move;touch-action:none}
+#fxbar{display:flex;gap:8px;align-items:center;background:var(--sf);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:13px}
+#fxbar input{width:90px}
 #stage{position:fixed;inset:0;z-index:99;display:none;cursor:none;touch-action:manipulation}
 #stage.on{display:block}
 #hud{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:100;background:rgba(0,0,0,.72);color:#fff;padding:8px 14px;border-radius:999px;font-size:13px;display:none;transition:opacity .4s;pointer-events:none;text-align:center}
@@ -63,6 +70,15 @@ footer{margin-top:32px;padding-top:16px;border-top:1px solid var(--line);font-si
 <button class="p" id="goAll">Start full test</button>
 <button id="goCycle">Auto-cycle (2 s)</button>
 </div>
+
+<h2>Gradients, patterns and backlight</h2>
+<div class="grid" id="pgrid"></div>
+<div class="row" style="margin-top:10px"><button id="goPat">Run all patterns</button></div>
+
+<h2>Stuck pixel fixer</h2>
+<p>Drag a small window of rapidly flashing colors over a stuck pixel and leave it running for 10 minutes or more. It can revive some stuck pixels. It cannot fix dead pixels.</p>
+<div class="row"><button id="goFix">Open pixel fixer</button></div>
+<p class="warn">Warning: this flashes colors quickly. Do not use it if you or anyone nearby has photosensitive epilepsy or is sensitive to flashing lights.</p>
 
 <h2>Controls in test mode</h2>
 <ul>
@@ -91,6 +107,12 @@ footer{margin-top:32px;padding-top:16px;border-top:1px solid var(--line);font-si
 <p>Clean the screen first, because dust looks like a faulty pixel. Set the brightness to maximum, press Start full test, and go through black, white, red, green, blue, cyan, magenta and yellow. Look at every corner and edge. Use the gray steps to spot uneven backlight and clouding on dark screens.</p>
 <h2>Can I fix a stuck pixel?</h2>
 <p>Dead pixels are usually permanent. A stuck pixel may come back by cycling colors for several minutes, or by gently pressing the spot with a soft cloth while the screen is on. Never press hard, since that can damage the panel. If the display is under warranty, contact the seller or manufacturer first, because many brands accept returns only above a certain number of faulty pixels.</p>
+<h2>Gradient and banding test</h2>
+<p>The gradient patterns show smooth ramps from black to white and across red, green and blue. Visible stripes or steps mean banding, which can come from a low-quality panel, poor color settings or limited color depth. The color bars and grid help you check color order and screen geometry.</p>
+<h2>Backlight bleed and uniformity test</h2>
+<p>Run the near-black and gray patterns in a dark room with the lights off. Bright patches at the edges or corners indicate backlight bleed. Blotchy areas on a gray screen indicate uneven backlight or clouding. A little is normal on many LCD monitors.</p>
+<h2>Stuck pixel fixer</h2>
+<p>The fixer opens a small window that flashes red, green, blue, white and black. Drag it over the stuck pixel and let it run for 10 minutes or more. Results vary, and it does not work on dead pixels. Do not use it if flashing lights affect you.</p>
 <h2>Frequently asked questions</h2>
 <h3>Is this test safe for my screen?</h3>
 <p>Yes. It only shows solid colors and does not stress the panel. On OLED screens, avoid leaving one bright color on for a long time.</p>
@@ -101,6 +123,7 @@ footer{margin-top:32px;padding-top:16px;border-top:1px solid var(--line);font-si
 </article>
 <footer>Copyright © Md Ashraful Hakim Khan Siddiquee · Free for noncommercial use</footer>
 </main>
+<div id="fixer" aria-label="Stuck pixel fixer window"><div id="fxbox" role="img" aria-label="Flashing area, drag over the stuck pixel"></div><div id="fxbar"><span id="fxtime">0:00</span><input type="range" id="fxsize" min="60" max="400" value="200" aria-label="Window size"><button id="fxstop" style="padding:4px 10px">Stop</button></div></div>
 <div id="stage" role="button" aria-label="Test color, click for next"></div>
 <div id="hud"></div>
 <script>
@@ -124,6 +147,25 @@ document.addEventListener("fullscreenchange",function(){if(!document.fullscreenE
 document.getElementById("goAll").onclick=function(){start(C.slice(0,8).concat(C.slice(8,11)),0,0)};
 document.getElementById("goCycle").onclick=function(){start(C.slice(0,8),0,2000)};
 document.getElementById("goCustom").onclick=function(){var v=document.getElementById("pick").value;start([["Custom "+v,v]],0,0)};
+
+var P=[["Grayscale ramp","linear-gradient(90deg,#000,#fff)"],["Red ramp","linear-gradient(90deg,#000,#f00)"],["Green ramp","linear-gradient(90deg,#000,#0f0)"],["Blue ramp","linear-gradient(90deg,#000,#00f)"],["Color bars","linear-gradient(90deg,#fff 0 12.5%,#ff0 0 25%,#0ff 0 37.5%,#0f0 0 50%,#f0f 0 62.5%,#f00 0 75%,#00f 0 87.5%,#000 0)"],["Near black 2%","#050505"],["Near black 5%","#0d0d0d"],["Near black 10%","#1a1a1a"],["Checkerboard","conic-gradient(#fff 25%,#000 0 50%,#fff 0 75%,#000 0) 0 0/2px 2px"],["Grid","repeating-linear-gradient(0deg,transparent 0 39px,#fff 39px 40px),repeating-linear-gradient(90deg,transparent 0 39px,#fff 39px 40px),#000"]];
+var pg=document.getElementById("pgrid");
+P.forEach(function(c,k){var d=document.createElement("div");d.className="sw pt";d.style.background=c[1];d.tabIndex=0;d.setAttribute("role","button");var sp=document.createElement("span");sp.textContent=c[0];d.appendChild(sp);
+d.onclick=function(){start(P,k,0)};d.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();start(P,k,0)}};pg.appendChild(d)});
+document.getElementById("goPat").onclick=function(){start(P,0,0)};
+var fx=document.getElementById("fixer"),box=document.getElementById("fxbox"),fxt=document.getElementById("fxtime"),fxs=document.getElementById("fxsize");
+var FC=["#ff0000","#00ff00","#0000ff","#ffffff","#000000"],fxI=null,fxN=0,fxS=0,fxD=null;
+function fxStop(){clearInterval(fxI);fxI=null;fx.classList.remove("on")}
+function fxGo(){if(!confirm("Warning: the pixel fixer flashes colors rapidly and can trigger seizures in people with photosensitive epilepsy. Continue?"))return;
+fx.classList.add("on");fxN=0;fxS=Date.now();clearInterval(fxI);
+fxI=setInterval(function(){box.style.background=FC[fxN++%FC.length];var t=Math.floor((Date.now()-fxS)/1000);fxt.textContent=Math.floor(t/60)+":"+("0"+t%60).slice(-2)},50)}
+document.getElementById("goFix").onclick=fxGo;
+document.getElementById("fxstop").onclick=fxStop;
+fxs.oninput=function(){box.style.width=box.style.height=fxs.value+"px"};
+box.onpointerdown=function(e){fxD=[e.clientX-fx.offsetLeft,e.clientY-fx.offsetTop];box.setPointerCapture(e.pointerId)};
+box.onpointermove=function(e){if(!fxD)return;fx.style.left=Math.max(0,e.clientX-fxD[0])+"px";fx.style.top=Math.max(0,e.clientY-fxD[1])+"px"};
+box.onpointerup=function(){fxD=null};
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&fx.classList.contains("on"))fxStop()});
 })();
 </script>
 </body>
